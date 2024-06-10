@@ -6,7 +6,7 @@ const {
 
 const jwt = require("jsonwebtoken");
 
-const UserController = {
+const userController = {
   // Register function
   async register(req, res, next) {
     const { firstname, lastname, email, password } = req.body;
@@ -136,4 +136,4 @@ const UserController = {
   },
 };
 
-module.exports = UserController;
+module.exports = userController;
