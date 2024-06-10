@@ -19,6 +19,19 @@ const handleErrors = (err, req, res, next) => {
       .status(400)
       .json({ success: false, message: "Email already exists" });
   }
+  if (err.message === "Incorrect password") {
+    return res
+      .status(400)
+      .json({ success: false, message: "Incorrect password" });
+  }
+
+  if (err.message === "Incorrect email") {
+    return res.status(400).json({
+      success: false,
+      message: "Incorrect email",
+    });
+  }
+  res.send(err.message);
 };
 
 module.exports = { notFound, handleErrors };
