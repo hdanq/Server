@@ -45,7 +45,7 @@ const Users = new Schema(
       default: "",
     },
     passwordChangedAt: {
-      type: String,
+      type: Date,
     },
     passwordResetToken: {
       type: String,
