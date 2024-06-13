@@ -5,6 +5,8 @@ const {
 } = require("../middlewares/jwt");
 
 const jwt = require("jsonwebtoken");
+const sendEmail = require("../ultils/email");
+const crypto = require("crypto");
 
 const userController = {
   // Register function
@@ -133,6 +135,112 @@ const userController = {
     return res
       .status(200)
       .json({ success: true, message: "Logout successfully" });
+  },
+
+  // Forgot password function
+  async forgotPassword(req, res, next) {
+    const { email } = req.body;
+    const user = await Users.findOne({ email });
+
+    try {
+      if (!email) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Missing email" });
+      }
+
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      const resetToken = await user.createResetPasswordToken();
+      await user.save({ validateBeforeSave: false });
+
+      // Send email with reset token
+      const resetURL = `${req.protocol}://${req.get(
+        "host"
+      )}/api/user/auth/resetpassword/${resetToken}`;
+
+      const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nThis link will be vaild only for 10 minutes, please ignore this email if you don't forgot your password!`;
+
+      const html = `
+      <div style="background-color: #f4f4f4; max-width: 600px; margin: auto; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+        <h1 style="color: #333333;">Password Change Request</h1>
+        <p style="color: #555555; line-height: 1.5;">We've received a password change request for your account.</p>
+        <p style="color: #555555; line-height: 1.5;">This link will expire in 10 minutes. If you did not request a password change, please ignore this email, no changes will be made to your account.</p>
+        <p><a href="${resetURL}" style="color: #1a73e8; text-decoration: none; word-wrap: break-word; word-break: break-all; overflow-wrap: break-word;">${resetURL}</a></p>
+        <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #aaaaaa;">
+            <p>If you have any questions, feel free to contact our support team.</p>
+        </div>
+      </div>`;
+
+      try {
+        await sendEmail({
+          email: user.email,
+          subject: "Your password reset (valid for 10 minutes)",
+          message,
+          html,
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "Token sent to email!",
+        });
+      } catch (error) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        user.save({ validateBeforeSave: false });
+
+        return res.status(500).json({
+          success: false,
+          message: "Email could not be sent!. Please try again later",
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
+  async resetPassword(req, res, next) {
+    const { password, resetToken } = req.body;
+    const passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    if (!password || !resetToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing fields" });
+    }
+
+    const user = await Users.findOne({
+      passwordResetToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    console.log(user);
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "This link is invalid or has expired",
+      });
+    }
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    user.passwordChangedAt = Date.now();
+
+    await user.save();
+
+    const loginToken = generateAccessToken(user._id, user.role);
+
+    return res.status(200).json({
+      success: user ? true : false,
+      message: user ? "Password reset successfully" : "Something went wrong!",
+      token: user ? loginToken : null,
+    });
   },
 };
 

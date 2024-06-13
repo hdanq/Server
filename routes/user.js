@@ -7,6 +7,8 @@ router.post("/login", userController.login);
 router.get("/current", verifyAccessToken, userController.getCurrent);
 router.post("/refreshtoken", userController.refreshAccessToken);
 router.get("/logout", userController.logout);
+router.post("/forgotPassword", userController.forgotPassword);
+router.post("/auth/resetpassword/:resetToken", userController.resetPassword);
 
 module.exports = router;
 // Compare this snippet from routes/index.js:

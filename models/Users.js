@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const { isEmail } = require("validator");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
 const Users = new Schema(
   {
@@ -50,7 +51,7 @@ const Users = new Schema(
       type: String,
     },
     passwordResetExpires: {
-      type: String,
+      type: Date,
     },
   },
   { timestamps: true }
@@ -75,6 +76,17 @@ Users.statics.login = async function (email, password) {
     throw Error("Incorrect password");
   }
   throw Error("Incorrect email");
+};
+
+Users.methods.createResetPasswordToken = async function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
 };
 
 module.exports = mongoose.model("Users", Users);
