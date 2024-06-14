@@ -19,4 +19,14 @@ const verifyAccessToken = async (req, res, next) => {
   }
 };
 
-module.exports = { verifyAccessToken };
+const isAdmin = async (req, res, next) => {
+  if (req.user?.role.toLowerCase() === "admin") {
+    next();
+  } else {
+    return res
+      .status(403)
+      .json({ success: false, message: "Require admin role!" });
+  }
+};
+
+module.exports = { verifyAccessToken, isAdmin };

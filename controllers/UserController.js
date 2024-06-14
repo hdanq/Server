@@ -7,6 +7,7 @@ const {
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../ultils/email");
 const crypto = require("crypto");
+const { get } = require("http");
 
 const userController = {
   // Register function
@@ -202,6 +203,8 @@ const userController = {
       next(error);
     }
   },
+
+  // Reset password function
   async resetPassword(req, res, next) {
     const { password, resetToken } = req.body;
     const passwordResetToken = crypto
@@ -240,6 +243,68 @@ const userController = {
       success: user ? true : false,
       message: user ? "Password reset successfully" : "Something went wrong!",
       token: user ? loginToken : null,
+    });
+  },
+
+  // Get all users
+  async getAllUsers(req, res, next) {
+    try {
+      const users = await Users.find().select("-password -refreshToken -role");
+      res.status(200).json({
+        success: users ? true : false,
+        data: users,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Delete user
+  async deleteUser(req, res, next) {
+    const { _id } = req.query;
+    if (!_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing fields" });
+    }
+    const user = await Users.findByIdAndDelete(_id);
+    return res.status(200).json({
+      success: user ? true : false,
+      message: user ? "User deleted successfully" : "Something went wrong!",
+    });
+  },
+
+  // Update user
+  async updateUser(req, res, next) {
+    const { _id } = req.user;
+    if (!_id || Object.keys(req.body).length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing fields" });
+    }
+    const user = await Users.findByIdAndUpdate(_id, req.body, {
+      new: true,
+    }).select("-password -refreshToken -role");
+    return res.status(200).json({
+      success: user ? true : false,
+      message: user ? "User updated successfully" : "Something went wrong!",
+    });
+  },
+
+  // Update user by admin
+  async updateUserByAdmin(req, res, next) {
+    const { uid } = req.params;
+    if (!uid || Object.keys(req.body).length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing fields" });
+    }
+    const user = await Users.findByIdAndUpdate(uid, req.body, {
+      new: true,
+    }).select("-password -refreshToken -role");
+    return res.status(200).json({
+      success: user ? true : false,
+      message: user ? "User updated successfully" : "Something went wrong!",
     });
   },
 };
