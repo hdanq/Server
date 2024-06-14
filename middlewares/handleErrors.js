@@ -31,7 +31,14 @@ const handleErrors = (err, req, res, next) => {
       message: "Incorrect email",
     });
   }
-  res.send(err.message);
+  if (err.message.includes("Users validation failed")) {
+    Object.values(err.errors).forEach((val) => {
+      return res.status(400).json({
+        success: false,
+        message: val.message,
+      });
+    });
+  }
 };
 
 module.exports = { notFound, handleErrors };
