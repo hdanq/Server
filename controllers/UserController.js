@@ -194,7 +194,8 @@ const userController = {
 
   // Reset password function
   async resetPassword(req, res, next) {
-    const { password, resetToken } = req.body;
+    const { password } = req.body;
+    const { resetToken } = req.params;
     const passwordResetToken = crypto
       .createHash("sha256")
       .update(resetToken)

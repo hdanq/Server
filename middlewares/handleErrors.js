@@ -14,7 +14,7 @@ const handleErrors = (err, req, res, next) => {
   if (statusCode === 404) {
     return res.status(404).json({ success: false, message: "404 Not Found!" });
   }
-  if (err && err.code === 11000) {
+  if (err && err.code === 11000 && err.keyValue.email) {
     return res
       .status(400)
       .json({ success: false, message: "Email already exists" });
