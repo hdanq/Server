@@ -175,7 +175,8 @@ const userController = {
 
         return res.status(200).json({
           success: true,
-          message: "Token sent to email!",
+          message:
+            "We have sent a link to your email. Please check your email to reset your password!",
         });
       } catch (error) {
         user.passwordResetToken = undefined;
