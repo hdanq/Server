@@ -7,7 +7,6 @@ const {
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../ultils/email");
 const crypto = require("crypto");
-const { get } = require("http");
 
 const userController = {
   // Register function
